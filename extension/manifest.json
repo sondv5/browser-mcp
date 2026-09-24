@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Browser MCP Bridge",
+  "version": "0.3.0",
+  "description": "Connects a local MCP server to this browser so agents can drive your real, already-logged-in tabs.",
+  "minimum_chrome_version": "116",
+  "permissions": ["tabs", "debugger", "storage", "alarms", "offscreen", "downloads"],
+  "host_permissions": ["ws://127.0.0.1/*", "http://127.0.0.1/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Browser MCP Bridge",
+    "default_popup": "popup.html"
+  }
+}

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 3v3M12 18v3M3 12h3M18 12h3" />
+          </svg>
+        </span>
+        <div>
+          <h1>Browser MCP</h1>
+          <p class="subtitle">Bridge to your real browser</p>
+        </div>
+      </div>
+      <span class="badge"><span id="badgeDot" class="dot"></span><span id="badgeText">…</span></span>
+    </header>
+
+    <section class="card">
+      <div class="status-row">
+        <span id="statusDot" class="dot big"></span>
+        <div>
+          <p id="statusTitle" class="status-title">Starting…</p>
+          <p id="statusMessage" class="status-message">Waiting for the background worker.</p>
+        </div>
+      </div>
+      <div class="meta">
+        <span id="metaPort">port 8787</span>
+        <span>·</span>
+        <span id="metaRole">hub —</span>
+        <span>·</span>
+        <span id="metaVersion"></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="field">
+        <label for="port">Hub port</label>
+        <input id="port" type="number" min="1" max="65535" />
+      </div>
+      <div class="field" style="margin-bottom: 0">
+        <label for="token">Shared token <span class="muted">— optional</span></label>
+        <div class="input-group">
+          <input id="token" type="password" placeholder="empty = no auth" autocomplete="off" />
+          <button id="toggleToken" class="text-btn" type="button">Show</button>
+        </div>
+      </div>
+      <div class="switch-row">
+        <div>
+          <p class="switch-label">Auto-connect</p>
+          <p class="muted small">Reconnect automatically whenever the MCP server starts.</p>
+        </div>
+        <label class="switch">
+          <input id="autoConnect" type="checkbox" />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button id="connect" class="btn primary" type="button">Save &amp; connect</button>
+      <button id="disconnect" class="btn secondary" type="button">Disconnect</button>
+    </div>
+
+    <p class="hint">
+      While an agent controls a tab, Chrome shows a "debugging this browser" banner — expected and
+      not suppressed. Ask the agent to call <code>browser_detach</code> to release it.
+    </p>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

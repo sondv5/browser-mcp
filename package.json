@@ -1,0 +1,15 @@
+{
+  "name": "browser-mcp-combo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "MCP server + Chrome MV3 extension that drives your real, already-logged-in browser",
+  "workspaces": [
+    "server"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace server",
+    "test": "npm run build && node --test server/test/features.test.mjs && npm run smoke",
+    "smoke": "npm run smoke --workspace server",
+    "start": "npm run start --workspace server"
+  }
+}
