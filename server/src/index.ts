@@ -60,7 +60,7 @@ process.stderr.write(
 );
 
 const server = new Server(
-  { name: "browser-mcp", version: "0.1.0" },
+  { name: "browser-mcp", version: "0.2.0" },
   {
     capabilities: { tools: {} },
     instructions:

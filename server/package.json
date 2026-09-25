@@ -1,6 +1,6 @@
 {
   "name": "@sondv5/browser-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "MCP stdio server that bridges to the Browser MCP Bridge extension over a local WebSocket hub",
   "license": "MIT",
