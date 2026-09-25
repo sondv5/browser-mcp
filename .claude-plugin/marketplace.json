@@ -1,0 +1,13 @@
+{
+  "name": "browser-mcp",
+  "description": "MCP server + Chrome MV3 extension that drives your real, already-logged-in browser",
+  "owner": {
+    "name": "sondv5"
+  },
+  "plugins": [
+    {
+      "name": "browser",
+      "source": "./"
+    }
+  ]
+}

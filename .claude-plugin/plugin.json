@@ -1,0 +1,18 @@
+{
+  "name": "browser",
+  "version": "0.1.0",
+  "description": "MCP server + Chrome MV3 extension that drives your real, already-logged-in browser",
+  "author": {
+    "name": "Son Dong Van"
+  },
+  "homepage": "https://github.com/sondv5/browser-mcp#readme",
+  "repository": "https://github.com/sondv5/browser-mcp",
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "browser",
+    "chrome",
+    "automation",
+    "cdp"
+  ]
+}

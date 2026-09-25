@@ -1,0 +1,8 @@
+{
+  "name": "browser",
+  "description": "MCP server + Chrome MV3 extension that drives your real, already-logged-in browser",
+  "version": "0.1.0",
+  "author": {
+    "name": "Son Dong Van"
+  }
+}

@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "description": "MCP server + Chrome MV3 extension that drives your real, already-logged-in browser",
+  "license": "MIT",
   "workspaces": [
     "server"
   ],

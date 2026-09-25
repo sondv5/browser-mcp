@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "browser": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@sondv5/browser-mcp@latest"]
+    }
+  }
+}

@@ -64,7 +64,34 @@ extension/  Chrome MV3 extension, no build step (load unpacked as-is)
    claude mcp add browser -- node /abs/path/server/dist/index.js --port 8787 --token TOKEN
    ```
 
+   Or, once published, run it straight from npm without cloning:
+
+   ```bash
+   npx -y @sondv5/browser-mcp@latest --port 8787 --token TOKEN
+   ```
+
 4. Reload the extension (or hit **Save & reconnect** in its popup). Badge `ON` = connected.
+
+### Install as a Claude Code / Cowork plugin
+
+```bash
+claude plugin marketplace add sondv5/browser-mcp
+claude plugin install browser@browser-mcp
+```
+
+This registers the MCP server for you (via `npx -y @sondv5/browser-mcp@latest`, no local clone or
+build needed). You still need to load the extension manually (step 2 above) and set
+`BROWSER_MCP_TOKEN` / `BROWSER_MCP_PORT` / `BROWSER_MCP_EXTENSION_ID` env vars if you want the
+optional token/port/extension pinning.
+
+### Install as a Cursor plugin
+
+- **Test locally**: copy (or symlink) this repo into `~/.cursor/plugins/local/browser-mcp`, then
+  reload the Cursor window.
+- **Share with your team**: Cursor Dashboard → **Plugins & MCPs** → **Import from Repo**, pointing
+  at `https://github.com/sondv5/browser-mcp`.
+- **Publish publicly** (open-source repos): submit it at
+  [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish).
 
 CLI flags: `--port` (default 8787), `--token`, `--extension-id`, `--upload-dir <dir>` (repeatable,
 enables `browser_upload_file` for files inside those directories), `--download-dir <dir>` (enables
