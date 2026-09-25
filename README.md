@@ -25,20 +25,19 @@ server/     Node 18+ / TypeScript MCP stdio server (hub host/guest, tools)
 extension/  Chrome MV3 extension, no build step (load unpacked as-is)
 ```
 
-## Quickstart
+## Quickstart (simplest setup, no clone needed)
 
-1. Build the server:
+1. Install the extension from the Chrome Web Store:
+   https://chromewebstore.google.com/detail/browser-mcp-bridge/ieijpbldkdjgncbbjndoolkkgaamlocl
+   (If you previously used **Load unpacked**, remove that version first to avoid
+   two copies fighting over the connection.)
 
-   ```bash
-   npm install
-   npm run build
-   ```
+2. Pick a token (any random string) and enter port `8787` + token in the
+   extension popup, then hit **Save & reconnect**. Badge `ON` = connected.
 
-2. Load the extension: `chrome://extensions` → enable Developer mode → **Load unpacked** →
-   select `extension/`. Pin the extension and copy its **ID** (optional but recommended).
+3. Register the MCP server with the same values — no local clone needed:
 
-3. Decide a token (any random string) and put it in the extension popup (port + token), then
-   register the MCP server with the same values. Example for opencode (`opencode.json`):
+   opencode (`opencode.json`):
 
    ```json
    {
@@ -46,11 +45,10 @@ extension/  Chrome MV3 extension, no build step (load unpacked as-is)
        "browser": {
          "type": "local",
          "command": [
-           "node", "E:\\ideas\\browser-mcp\\server\\dist\\index.js",
+           "npx", "-y", "@sondv5/browser-mcp@latest",
            "--port", "8787",
            "--token", "PASTE_RANDOM_TOKEN",
-           "--extension-id", "PASTE_EXTENSION_ID",
-           "--verbose"
+           "--extension-id", "ieijpbldkdjgncbbjndoolkkgaamlocl"
          ],
          "enabled": true
        }
@@ -61,16 +59,29 @@ extension/  Chrome MV3 extension, no build step (load unpacked as-is)
    Claude Code:
 
    ```bash
-   claude mcp add browser -- node /abs/path/server/dist/index.js --port 8787 --token TOKEN
+   claude mcp add browser -- npx -y @sondv5/browser-mcp@latest \
+     --port 8787 --token TOKEN \
+     --extension-id ieijpbldkdjgncbbjndoolkkgaamlocl
    ```
 
-   Or, once published, run it straight from npm without cloning:
+4. Restart your agent so it picks up the MCP server. Done — the agent works in
+   background tabs while you keep browsing.
 
-   ```bash
-   npx -y @sondv5/browser-mcp@latest --port 8787 --token TOKEN
-   ```
+### Build from source (for development)
 
-4. Reload the extension (or hit **Save & reconnect** in its popup). Badge `ON` = connected.
+```bash
+npm install
+npm run build
+```
+
+Then point your MCP config at the local build instead of npx:
+
+```json
+"command": ["node", "/abs/path/browser-mcp/server/dist/index.js", "--port", "8787", "--token", "TOKEN"]
+```
+
+And load the unpacked extension from `extension/` via `chrome://extensions` →
+Developer mode → **Load unpacked** (only needed if you hack on the extension).
 
 ### Install as a Claude Code / Cowork plugin
 
@@ -80,7 +91,7 @@ claude plugin install browser@browser-mcp
 ```
 
 This registers the MCP server for you (via `npx -y @sondv5/browser-mcp@latest`, no local clone or
-build needed). You still need to load the extension manually (step 2 above) and set
+build needed). You still need to install the extension from the Web Store (step 1 above) and set
 `BROWSER_MCP_TOKEN` / `BROWSER_MCP_PORT` / `BROWSER_MCP_EXTENSION_ID` env vars if you want the
 optional token/port/extension pinning.
 
