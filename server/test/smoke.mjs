@@ -258,27 +258,26 @@ async function main() {
 
   const tools = await a.client.listTools();
   check(
-    "tools/list exposes browser_tabs",
-    tools.tools.some((tool) => tool.name === "browser_tabs"),
+    "tools/list exposes browser_tab",
+    tools.tools.some((tool) => tool.name === "browser_tab"),
     `got ${tools.tools.length} tools`,
   );
 
   const requiredTools = [
-    "browser_network_start",
-    "browser_network_requests",
-    "browser_network_request",
-    "browser_network_stop",
+    "browser_tab",
+    "browser_act",
+    "browser_read",
+    "browser_network",
     "browser_download",
-    "browser_downloads",
-    "browser_download_status",
-    "browser_download_cancel",
+    "browser_server_status",
+    "browser_cdp",
   ];
   check(
-    "tools/list exposes all network and download tools",
+    "tools/list exposes all 7 compact tools",
     requiredTools.every((name) => tools.tools.some((tool) => tool.name === name)),
     `got ${tools.tools.length} tools`,
   );
-  check("tools/list contains 34 tools", tools.tools.length === 34, `got ${tools.tools.length}`);
+  check("tools/list contains 7 tools", tools.tools.length === 7, `got ${tools.tools.length}`);
   const manifest = JSON.parse(
     fs.readFileSync(path.resolve(here, "..", "..", "extension", "manifest.json"), "utf8"),
   );
@@ -290,22 +289,22 @@ async function main() {
     JSON.stringify(manifest.permissions),
   );
 
-  const tabsA = await a.client.callTool({ name: "browser_tabs", arguments: {} });
-  check("host browser_tabs reaches the extension", JSON.stringify(tabsA.content).includes("Fake Tab"));
+  const tabsA = await a.client.callTool({ name: "browser_tab", arguments: { action: "list" } });
+  check("host browser_tab/list reaches the extension", JSON.stringify(tabsA.content).includes("Fake Tab"));
 
-  const snapshot = await a.client.callTool({ name: "browser_snapshot", arguments: { tabId: 7 } });
+  const snapshot = await a.client.callTool({ name: "browser_read", arguments: { action: "snapshot", tabId: 7 } });
   check("host snapshot returns refs", JSON.stringify(snapshot.content).includes("ref=abc123_1"));
 
   const networkStart = await a.client.callTool({
-    name: "browser_network_start",
-    arguments: { tabId: 7, clear: true },
+    name: "browser_network",
+    arguments: { action: "start", tabId: 7, clear: true },
   });
   const networkStartJson = JSON.parse(String(networkStart.content[0]?.text ?? "{}"));
   check("network capture starts", networkStartJson.active === true, JSON.stringify(networkStartJson));
 
   const networkList = await a.client.callTool({
-    name: "browser_network_requests",
-    arguments: { tabId: 7, limit: 10, urlContains: "example.test" },
+    name: "browser_network",
+    arguments: { action: "list", tabId: 7, limit: 10, urlContains: "example.test" },
   });
   const networkListJson = JSON.parse(String(networkList.content[0]?.text ?? "{}"));
   check(
@@ -316,8 +315,8 @@ async function main() {
   );
 
   const networkGet = await b.client.callTool({
-    name: "browser_network_request",
-    arguments: { tabId: 7, entryId: "capture-1:1" },
+    name: "browser_network",
+    arguments: { action: "get", tabId: 7, entryId: "capture-1:1" },
   });
   check(
     "guest network detail is tunnelled through the host",
@@ -326,8 +325,9 @@ async function main() {
   );
 
   const action = await a.client.callTool({
-    name: "browser_click",
+    name: "browser_act",
     arguments: {
+      action: "click",
       tabId: 7,
       x: 10,
       y: 20,
@@ -347,6 +347,7 @@ async function main() {
   const downloadStart = await a.client.callTool({
     name: "browser_download",
     arguments: {
+      action: "start",
       url: "https://example.test/download.txt",
       filename: "download.txt",
       requestId: "00000000-0000-4000-8000-000000000001",
@@ -361,8 +362,9 @@ async function main() {
   );
 
   const downloadStatus = await b.client.callTool({
-    name: "browser_download_status",
+    name: "browser_download",
     arguments: {
+      action: "status",
       downloadId: "00000000-0000-4000-8000-000000000001",
       wait: true,
       timeoutMs: 1000,
@@ -375,17 +377,17 @@ async function main() {
     JSON.stringify(downloadStatusJson),
   );
 
-  const downloadList = await a.client.callTool({ name: "browser_downloads", arguments: {} });
+  const downloadList = await a.client.callTool({ name: "browser_download", arguments: { action: "list" } });
   check("download list routes to the extension", JSON.stringify(downloadList.content).includes("download.txt"));
   const downloadCancel = await a.client.callTool({
-    name: "browser_download_cancel",
-    arguments: { downloadId: "00000000-0000-4000-8000-000000000001" },
+    name: "browser_download",
+    arguments: { action: "cancel", downloadId: "00000000-0000-4000-8000-000000000001" },
   });
   check("download cancel routes to the extension", JSON.stringify(downloadCancel.content).includes("cancelled"));
 
   const invalidDownload = await a.client.callTool({
     name: "browser_download",
-    arguments: { url: "file:///C:/secret.txt" },
+    arguments: { action: "start", url: "file:///C:/secret.txt" },
   });
   check(
     "download rejects non-HTTP URLs",
@@ -393,7 +395,7 @@ async function main() {
     JSON.stringify(invalidDownload.content),
   );
 
-  const networkStop = await a.client.callTool({ name: "browser_network_stop", arguments: { tabId: 7 } });
+  const networkStop = await a.client.callTool({ name: "browser_network", arguments: { action: "stop", tabId: 7 } });
   const networkStopJson = JSON.parse(String(networkStop.content[0]?.text ?? "{}"));
   check("network capture stops", networkStopJson.active === false, JSON.stringify(networkStopJson));
 
@@ -401,9 +403,9 @@ async function main() {
   const statusAJson = JSON.parse(String(statusA.content[0]?.text ?? "{}"));
   check("first server is the hub host", statusAJson.role === "host", JSON.stringify(statusAJson));
 
-  const tabsB = await b.client.callTool({ name: "browser_tabs", arguments: {} });
+  const tabsB = await b.client.callTool({ name: "browser_tab", arguments: { action: "list" } });
   check(
-    "guest browser_tabs is tunnelled through the host",
+    "guest browser_tab/list is tunnelled through the host",
     JSON.stringify(tabsB.content).includes("Fake Tab"),
     JSON.stringify(tabsB.content).slice(0, 400),
   );
@@ -412,64 +414,64 @@ async function main() {
   const statusBJson = JSON.parse(String(statusB.content[0]?.text ?? "{}"));
   check("second server reports guest role", statusBJson.role === "guest", JSON.stringify(statusBJson));
 
-  const shot = await a.client.callTool({ name: "browser_screenshot", arguments: { tabId: 7 } });
+  const shot = await a.client.callTool({ name: "browser_read", arguments: { action: "screenshot", tabId: 7 } });
   check(
     "screenshot is returned as an image content block",
     Array.isArray(shot.content) && shot.content[0]?.type === "image",
   );
 
-  const detach = await a.client.callTool({ name: "browser_detach", arguments: { tabId: 7 } });
+  const detach = await a.client.callTool({ name: "browser_tab", arguments: { action: "detach", tabId: 7 } });
   const detachJson = JSON.parse(String(detach.content[0]?.text ?? "{}"));
   check(
-    "browser_detach routes to the extension",
+    "browser_tab/detach routes to the extension",
     Array.isArray(detachJson.detached) && detachJson.detached[0] === 7,
     JSON.stringify(detachJson),
   );
 
-  const hover = await a.client.callTool({ name: "browser_hover", arguments: { tabId: 7, ref: "abc123_1" } });
-  check("browser_hover routes to the extension", !hover.isError, JSON.stringify(hover.content));
+  const hover = await a.client.callTool({ name: "browser_act", arguments: { action: "hover", tabId: 7, ref: "abc123_1" } });
+  check("browser_act/hover routes to the extension", !hover.isError, JSON.stringify(hover.content));
 
   const select = await a.client.callTool({
-    name: "browser_select_option",
-    arguments: { tabId: 7, ref: "abc123_1", label: "Bravo" },
+    name: "browser_act",
+    arguments: { action: "select", tabId: 7, ref: "abc123_1", label: "Bravo" },
   });
   const selectJson = JSON.parse(String(select.content[0]?.text ?? "{}"));
-  check("browser_select_option returns the selected option", selectJson.selected?.value === "b", JSON.stringify(selectJson));
+  check("browser_act/select returns the selected option", selectJson.selected?.value === "b", JSON.stringify(selectJson));
 
-  const back = await a.client.callTool({ name: "browser_back", arguments: { tabId: 7 } });
-  check("browser_back routes to the extension", !back.isError, JSON.stringify(back.content));
+  const back = await a.client.callTool({ name: "browser_tab", arguments: { action: "back", tabId: 7 } });
+  check("browser_tab/back routes to the extension", !back.isError, JSON.stringify(back.content));
 
-  const reload = await a.client.callTool({ name: "browser_reload", arguments: { tabId: 7 } });
-  check("browser_reload routes to the extension", !reload.isError, JSON.stringify(reload.content));
+  const reload = await a.client.callTool({ name: "browser_tab", arguments: { action: "reload", tabId: 7 } });
+  check("browser_tab/reload routes to the extension", !reload.isError, JSON.stringify(reload.content));
 
   const dialog = await a.client.callTool({
-    name: "browser_handle_dialog",
-    arguments: { tabId: 7, accept: true },
+    name: "browser_act",
+    arguments: { action: "dialog", tabId: 7, accept: true },
   });
-  check("browser_handle_dialog routes to the extension", !dialog.isError, JSON.stringify(dialog.content));
+  check("browser_act/dialog routes to the extension", !dialog.isError, JSON.stringify(dialog.content));
 
-  const find = await a.client.callTool({ name: "browser_find", arguments: { tabId: 7, query: "sign in" } });
-  check("browser_find returns refs", JSON.stringify(find.content).includes("abc123_9"), JSON.stringify(find.content));
+  const find = await a.client.callTool({ name: "browser_read", arguments: { action: "find", tabId: 7, query: "sign in" } });
+  check("browser_read/find returns refs", JSON.stringify(find.content).includes("abc123_9"), JSON.stringify(find.content));
 
   const uploadInside = await a.client.callTool({
-    name: "browser_upload_file",
-    arguments: { tabId: 7, ref: "abc123_1", files: [UPLOAD_FILE] },
+    name: "browser_act",
+    arguments: { action: "upload", tabId: 7, ref: "abc123_1", files: [UPLOAD_FILE] },
   });
-  check("browser_upload_file allows paths inside --upload-dir", !uploadInside.isError, JSON.stringify(uploadInside.content));
+  check("browser_act/upload allows paths inside --upload-dir", !uploadInside.isError, JSON.stringify(uploadInside.content));
 
   const uploadOutside = await a.client.callTool({
-    name: "browser_upload_file",
-    arguments: { tabId: 7, ref: "abc123_1", files: [OUTSIDE_FILE] },
+    name: "browser_act",
+    arguments: { action: "upload", tabId: 7, ref: "abc123_1", files: [OUTSIDE_FILE] },
   });
   check(
-    "browser_upload_file rejects paths outside --upload-dir",
+    "browser_act/upload rejects paths outside --upload-dir",
     uploadOutside.isError === true && JSON.stringify(uploadOutside.content).includes("outside"),
     JSON.stringify(uploadOutside.content),
   );
 
   extension.close();
   await sleep(400);
-  const offline = await a.client.callTool({ name: "browser_tabs", arguments: {} });
+  const offline = await a.client.callTool({ name: "browser_tab", arguments: { action: "list" } });
   check(
     "clear error when the extension is offline",
     offline.isError === true && JSON.stringify(offline.content).includes("not connected"),

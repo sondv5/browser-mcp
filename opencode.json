@@ -5,13 +5,14 @@
       "type": "local",
       "command": [
         "node",
-        "E:\\ideas\\browser-mcp\\server\\dist\\index.js",
+        "server/dist/index.js",
         "--port",
         "8787",
         "--download-dir",
-        "C:\\Users\\DevBlock-DBL078\\Downloads\\browser-mcp",
+        "C:\\Users\\admin\\Downloads\\browser-mcp",
         "--verbose"
       ],
+      "cwd": ".",
       "enabled": true
     }
   }

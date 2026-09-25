@@ -65,7 +65,7 @@ const server = new Server(
     capabilities: { tools: {} },
     instructions:
       "Controls the user's real, already-logged-in Chrome through the Browser MCP Bridge extension. " +
-      "Prefer browser_snapshot before clicking or typing: refs are stable only until the next snapshot or navigation. " +
+      "Prefer browser_read { action: 'snapshot' } before clicking or typing: refs are stable only until the next snapshot or navigation. " +
       "The user is working in the same browser: never activate or navigate their active tab unless asked; pass tabId explicitly and prefer background tabs. " +
       "Confirm with the user before side-effecting actions (submitting forms, sending messages, deleting data, purchases).",
   },

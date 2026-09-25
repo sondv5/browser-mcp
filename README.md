@@ -94,45 +94,21 @@ optional token/port/extension pinning.
   [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish).
 
 CLI flags: `--port` (default 8787), `--token`, `--extension-id`, `--upload-dir <dir>` (repeatable,
-enables `browser_upload_file` for files inside those directories), `--download-dir <dir>` (enables
-download tools for Chrome's `Downloads/browser-mcp` directory), `--verbose`.
+enables `browser_act { action: 'upload' }` for files inside those directories), `--download-dir <dir>` (enables
+`browser_download` tools for Chrome's `Downloads/browser-mcp` directory), `--verbose`.
 Env fallbacks: `BROWSER_MCP_PORT`, `BROWSER_MCP_TOKEN`, `BROWSER_MCP_EXTENSION_ID`,
 `BROWSER_MCP_UPLOAD_DIRS` (path-separator separated), `BROWSER_MCP_DOWNLOAD_DIR`.
 
-## Tools
+## Tools (7 compact tools, `action` selects the operation)
 
-| Tool | Notes |
+| Tool | `action` values |
 | --- | --- |
+| `browser_tab` | `list` (every tab), `open` (background by default, `newWindow: true` = fresh unfocused window), `close`, `activate` (foreground for login/2FA/captcha, use sparingly), `navigate` (requires `url`, no focus steal), `back` / `forward` / `reload`, `detach` (release tab + remove debug banner) |
+| `browser_act` | `click` (ref or x/y), `type` (requires `text`, optional ref + `submit`), `press_key` (requires `key` + modifiers), `hover`, `scroll` (ref or deltaX/deltaY), `select` (native `<select>` by value/label/index), `upload` (needs `--upload-dir`), `dialog` (accept/dismiss alert/confirm/prompt) |
+| `browser_read` | `snapshot` (outline + `ref`, call before click/type), `find` (requires `query`), `get_text`, `evaluate` (requires `expression`), `wait` (text/selector/url/load/networkIdle), `console`, `screenshot` (viewport or ref PNG; `fullPage` needs a visible tab) |
+| `browser_network` | `start` / `stop` (bounded 500-entry capture), `list` (filtered summaries, redacted), `get` (metadata + optional transient text bodies) |
+| `browser_download` | `start` (needs `--download-dir`), `list`, `status` (`wait: true` never cancels on timeout), `cancel` (never deletes completed files) |
 | `browser_server_status` | host/guest role, port, extension connected, pending calls |
-| `browser_tabs` | every open tab: tabId, title, url, active, windowId |
-| `browser_open` | new tab, background by default; `newWindow: true` puts it in a fresh unfocused window |
-| `browser_navigate` | navigate a tab without stealing focus |
-| `browser_snapshot` | outline + `ref` for every interactive element (call before click/type) |
-| `browser_find` | find text and get refs for matches (long pages) |
-| `browser_click` | click by ref or viewport x/y; trusted CDP input |
-| `browser_hover` | hover by ref or x/y (menus, tooltips) |
-| `browser_type` | focus (optional ref) + insert text, optional Enter |
-| `browser_press_key` | Enter, Tab, Escape, arrows… with modifiers |
-| `browser_select_option` | pick a `<select>` option by value / label / index |
-| `browser_scroll` | scroll to a ref, or wheel by deltaX/deltaY |
-| `browser_back` / `browser_forward` / `browser_reload` | navigation history and reload |
-| `browser_handle_dialog` | accept/dismiss alert, confirm, prompt, beforeunload |
-| `browser_screenshot` | viewport or element-by-ref PNG; `fullPage` needs a visible tab |
-| `browser_get_text` | element (ref) or page text |
-| `browser_evaluate` | evaluate JS in the page |
-| `browser_wait_for` | wait for text or a selector (`visible: true` also waits for rendering) |
-| `browser_console` | buffered console messages / exceptions per tab |
-| `browser_upload_file` | attach local files (needs `--upload-dir`) |
-| `browser_network_start` / `browser_network_stop` | start/stop a bounded 500-entry network capture for one tab |
-| `browser_network_requests` | filtered request summaries, newest first; URLs/header values are redacted |
-| `browser_network_request` | request/response metadata plus optional transient text bodies |
-| `browser_download` | start an HTTP(S) download in `Downloads/browser-mcp` (needs `--download-dir`) |
-| `browser_downloads` | recent session/page downloads inside the configured directory |
-| `browser_download_status` | progress/state; `wait: true` never cancels on timeout |
-| `browser_download_cancel` | cancel an active download; never deletes completed files |
-| `browser_tab_activate` | foreground a tab (human handoff: login, 2FA, captcha) |
-| `browser_close` | close a tab |
-| `browser_detach` | release one tab (`tabId`) or every attached tab; removes the debug banner |
 | `browser_cdp` | escape hatch: raw CDP command on a tab |
 
 Refs are only valid until the next snapshot or navigation; they embed the snapshot epoch so stale
@@ -140,8 +116,7 @@ refs fail with a clear error instead of clicking the wrong element.
 
 ## Action state
 
-`browser_click`, `browser_type`, `browser_press_key`, `browser_select_option`, `browser_navigate`,
-`browser_back`, `browser_forward`, and `browser_reload` accept optional post-action fields:
+`browser_act` (click/type/press_key/select) and `browser_tab` (navigate/back/forward/reload) accept optional post-action fields:
 
 - `waitFor: { selector?, text?, url?, visible? }` waits in the latest committed document;
 - `settle: "load" | "networkIdle" | "both"` waits for page/network lifecycle;
@@ -149,10 +124,10 @@ refs fail with a clear error instead of clicking the wrong element.
 - `timeoutMs` bounds the complete post-action workflow (default 30 seconds).
 
 The result adds an `actionState` object without removing legacy fields. Calls without these options
-retain the original fire-and-forget behavior. `browser_wait_for` also accepts `url`, `load`, and
+retain the original fire-and-forget behavior. `browser_read { action: 'wait' }` also accepts `url`, `load`, and
 `networkIdle` and uses event-driven DOM/CDP waits rather than a fixed sleep.
 
-Network capture starts only after `browser_network_start`; it does not backfill earlier requests.
+Network capture starts only after `browser_network { action: 'start' }`; it does not backfill earlier requests.
 The extension stores at most 500 records per tab in memory, invalidates the buffer on detach/restart,
 and redacts common URL/header secrets. Request/response bodies are omitted unless explicitly requested
 and are limited to 32 KiB of transient text.
@@ -177,11 +152,11 @@ non-files, or outside that exact directory. No tool reads, opens, executes, or d
      pretending the action happened.
 
   Override per call with `focus: "auto" | "keep" | "never" | "emulate"` on click/type/press_key/
-  hover/scroll. The debug banner ("… is debugging this browser") is deliberately not suppressed;
-  `browser_detach` releases a tab on demand.
+   hover/scroll. The debug banner ("… is debugging this browser") is deliberately not suppressed;
+   `browser_tab { action: 'detach' }` releases a tab on demand.
 - **No DOM mutation for refs.** Element refs live in an in-page `Map` (`globalThis.__browserMcpRefs`)
   and are never written as attributes; snapshots leave the DOM byte-identical.
-- **Background-first.** `browser_open` and `browser_navigate` do not activate tabs. Pass `tabId`
+- **Background-first.** `browser_tab { action: 'open' }` and `{ action: 'navigate' }` do not activate tabs. Pass `tabId`
   explicitly when several agents share the browser.
 - **Password redaction.** Password inputs are reported as `[redacted]` in snapshots.
 
@@ -219,7 +194,7 @@ force a connect or a full disconnect without touching files.
   interception, and historical requests from before capture are not available.
 - If DevTools is open on a tab, `chrome.debugger.attach` fails for that tab (clear error).
 - `chrome.tabs` and `chrome.debugger` do not see `chrome://` pages or other extensions' pages.
-- Full-page screenshots (`fullPage: true`) require the tab to be visible; use `browser_tab_activate`
+- Full-page screenshots (`fullPage: true`) require the tab to be visible; use `browser_tab { action: 'activate' }`
   first, or capture the viewport or an element by ref (both work silently on background tabs).
 - Windows can be occluded or minimized: focus emulation revives most cases, but if input still
   cannot be delivered the tool fails loudly (suggesting `focus: "keep"`) rather than doing nothing.
